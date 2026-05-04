@@ -1,11 +1,11 @@
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Scanner;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Stack;
 
 public class App {
@@ -43,12 +43,6 @@ public class App {
         for (int i = 0; i < numSets; i++) {
             cache.add(new Stack<>());
         }
-
-        System.out.println("offsetbits = " + offsetBits);
-        System.out.println("numSets = " + numSets);
-        System.out.println("index bits = " + indexBits);
-        System.out.println("tagbits = " + tagBits);
-
         // Read the addresses file placed in the project's src folder
         String path = "src/address.txt";
         if (args.length > 0)
@@ -56,7 +50,6 @@ public class App {
 
         try {
             List<Long> addresses = readAddresses(path);
-            System.out.println("Read " + addresses.size() + " addresses from: " + path);
             int offset;
             int index;
             int tag;
@@ -74,7 +67,7 @@ public class App {
                 set = cache.get(index);
 
                 System.out.printf("[ %2d] Addr=0x%04x", i + 1, addresses.get(i));
-                System.out.printf(" Tag=0x%05x", tag);
+                System.out.printf(" Tag=%s", String.format("%5s", Integer.toBinaryString(tag)).replace(' ', '0'));
                 System.out.print(" Index=" + index);
                 System.out.print(" Offset=" + offset);
 
@@ -83,6 +76,7 @@ public class App {
                     set.push(tag);
                     numOfHits += 1;
                     System.out.print(" --> HIT");
+                    System.out.print(" Evicted=-");
                 } else {
                     
                     System.out.print(" --> MISS");
@@ -90,7 +84,6 @@ public class App {
                         int evictedNum = set.remove(0);
                         System.out.printf(" Evicted=%05x", evictedNum);
                     } else {
-
                         System.out.print(" Evicted=-");
                     }
                     set.push(tag);
@@ -99,12 +92,22 @@ public class App {
 
                 //Printing out set
                 System.out.print(" Set:[");
-                for(int item : set) {
-                    System.out.printf("%05x, ", item);
+                System.out.printf("%s", String.format("%5s", Integer.toBinaryString(set.get(0))).replace(' ', '0'));
+                for(int j = 1; j < set.size(); j++) {
+                    System.out.printf(",%s", String.format("%5s", Integer.toBinaryString(set.get(j))).replace(' ', '0'));
                 }
                 System.out.print("]\n");
 
+
             }
+
+            System.out.println("------------------------------");
+            System.out.println("Total Accesses: " + addresses.size());
+            System.out.println("Hits: " + numOfHits);
+            System.out.println("Misses: " + numOfMisses);
+            System.out.printf("Hit Rate: %.2f%%\n", (double) numOfHits / addresses.size() * 100);
+            System.out.printf("Miss Rate: %.2f%%\n", (double) numOfMisses / addresses.size() * 100);
+            System.out.println("------------------------------");
 
         } catch (IOException e) {
             System.err.println("Failed to read addresses: " + e.getMessage());
@@ -147,10 +150,6 @@ public class App {
             return Long.parseUnsignedLong(s.substring(2), 2);
         }
         return Long.parseUnsignedLong(s, 10);
-    }
-
-    public static void calculateWithAddress() {
-
     }
 
 }
