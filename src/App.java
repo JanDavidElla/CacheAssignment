@@ -105,8 +105,8 @@ public class App {
             System.out.println("Total Accesses: " + addresses.size());
             System.out.println("Hits: " + numOfHits);
             System.out.println("Misses: " + numOfMisses);
-            System.out.printf("Hit Rate: %.2f%%\n", (double) numOfHits / addresses.size() * 100);
-            System.out.printf("Miss Rate: %.2f%%\n", (double) numOfMisses / addresses.size() * 100);
+            System.out.printf("Hit Rate: %.0f%%\n", (double) numOfHits / addresses.size() * 100);
+            System.out.printf("Miss Rate: %.0f%%\n", (double) numOfMisses / addresses.size() * 100);
             System.out.println("------------------------------");
 
         } catch (IOException e) {
