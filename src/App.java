@@ -61,8 +61,11 @@ public class App {
             // Main for loop for program
             for (int i = 0; i < addresses.size(); i++) {
                 int address = (int) addresses.get(i).longValue();
+                // Bit-mask extraction: offset uses the lower log2(blockSize) bits.
                 offset = address & (blockSize - 1);
+                // Bit-shift + bit-mask extraction: isolate index bits after offset.
                 index = (address >> offsetBits) & (numSets - 1);
+                // Bit-shift extraction: remaining upper bits become the tag.
                 tag = (int)(address >> (offsetBits + indexBits));
                 set = cache.get(index);
 
@@ -71,21 +74,24 @@ public class App {
                 System.out.print(" Index=" + index);
                 System.out.print(" Offset=" + offset);
 
+                // HIT check: tag already exists in this set.
                 if(set.contains(tag)) {
                     set.remove((Integer) tag);
+                    // MRU insertion on hit: move accessed tag to most-recently-used position.
                     set.push(tag);
                     numOfHits += 1;
                     System.out.print(" --> HIT");
                     System.out.print(" Evicted=-");
                 } else {
-                    
                     System.out.print(" --> MISS");
                     if(set.size() == ways) {
+                        // LRU eviction on full miss: index 0 is the least-recently-used tag.
                         int evictedNum = set.remove(0);
                         System.out.printf(" Evicted=%05x", evictedNum);
                     } else {
                         System.out.print(" Evicted=-");
                     }
+                    // MRU insertion on miss: new tag becomes most recently used.
                     set.push(tag);
                     numOfMisses += 1;
                 }
@@ -97,10 +103,8 @@ public class App {
                     System.out.printf(",%s", String.format("%5s", Integer.toBinaryString(set.get(j))).replace(' ', '0'));
                 }
                 System.out.print("]\n");
-
-
             }
-
+            // Summary calculation: totals and integer-rounded hit/miss percentages.
             System.out.println("------------------------------");
             System.out.println("Total Accesses: " + addresses.size());
             System.out.println("Hits: " + numOfHits);
@@ -132,6 +136,7 @@ public class App {
                 if (line.isEmpty() || line.startsWith("#"))
                     continue;
                 String token = line.split("\\s+")[0];
+                // Address parsing dispatch: supports hex, binary, and decimal tokens.
                 long value = parseAddress(token);
                 out.add(value);
             }
