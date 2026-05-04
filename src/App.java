@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class App {
     static int cacheSize;
@@ -15,7 +16,10 @@ public class App {
     static int numSets;
     static int indexBits;
     static int tagBits;
-    static int[][] cache;
+    // Uses a stack to keep track of LRU.
+    // The element that is popped is the LRU
+    // Everytime an element is accessed, it gets back to the end of the list
+    static List<Stack<Integer>> cache;
 
     public static void main(String[] args) throws Exception {
         Scanner scnr = new Scanner(System.in);
@@ -32,7 +36,13 @@ public class App {
         numSets = cacheSize / (blockSize * ways);
         indexBits = (int) (Math.log((double) numSets) / Math.log(2)); // log2(numSets)
         tagBits = 32 - indexBits - offsetBits;
-        cache = new int[numSets][ways];
+
+        //1D array = Number of Sets
+        //2D array = Number of Ways currently (max = ways)
+        cache = new ArrayList<>();
+        for (int i = 0; i < numSets; i++) {
+            cache.add(new Stack<>());
+        }
 
         System.out.println("offsetbits = " + offsetBits);
         System.out.println("numSets = " + numSets);
@@ -47,10 +57,53 @@ public class App {
         try {
             List<Long> addresses = readAddresses(path);
             System.out.println("Read " + addresses.size() + " addresses from: " + path);
+            int offset;
+            int index;
+            int tag;
+            Stack<Integer> set;
+
+            int numOfHits = 0;
+            int numOfMisses = 0;            
 
             // Main for loop for program
             for (int i = 0; i < addresses.size(); i++) {
-                System.out.printf("[ %2d] Addr=0x%04x\n", i + 1, addresses.get(i));
+                int address = (int) addresses.get(i).longValue();
+                offset = address & (blockSize - 1);
+                index = (address >> offsetBits) & (numSets - 1);
+                tag = (int)(address >> (offsetBits + indexBits));
+                set = cache.get(index);
+
+                System.out.printf("[ %2d] Addr=0x%04x", i + 1, addresses.get(i));
+                System.out.printf(" Tag=0x%05x", tag);
+                System.out.print(" Index=" + index);
+                System.out.print(" Offset=" + offset);
+
+                if(set.contains(tag)) {
+                    set.remove((Integer) tag);
+                    set.push(tag);
+                    numOfHits += 1;
+                    System.out.print(" --> HIT");
+                } else {
+                    
+                    System.out.print(" --> MISS");
+                    if(set.size() == ways) {
+                        int evictedNum = set.remove(0);
+                        System.out.printf(" Evicted=%05x", evictedNum);
+                    } else {
+
+                        System.out.print(" Evicted=-");
+                    }
+                    set.push(tag);
+                    numOfMisses += 1;
+                }
+
+                //Printing out set
+                System.out.print(" Set:[");
+                for(int item : set) {
+                    System.out.printf("%05x, ", item);
+                }
+                System.out.print("]\n");
+
             }
 
         } catch (IOException e) {
